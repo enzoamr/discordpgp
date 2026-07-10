@@ -118,12 +118,25 @@ const Discord = {
   sendRaw(channelId, content) {
     const actions = this.MessageActions;
     if (!actions) throw new Error('Module d\'envoi introuvable');
-    return actions.sendMessage(channelId, {
+    const message = {
       content,
       tts: false,
       invalidEmojis: [],
       validNonShortcutEmojis: [],
-    });
+    };
+    // Discord moderne attend un 4e argument « options » contenant un nonce
+    // (envoi optimiste). L'omettre déclenche l'erreur interne
+    // « Cannot read properties of undefined (reading 'nonce') ».
+    return actions.sendMessage(channelId, message, undefined, { nonce: this._nonce() });
+  },
+
+  /** Nonce d'envoi (snowflake Discord : (ms - époque 2015-01-01) << 22). */
+  _nonce() {
+    try {
+      return String((BigInt(Date.now()) - 1420070400000n) << 22n);
+    } catch (e) {
+      return String(Date.now());
+    }
   },
 
   /** Messages actuellement en cache pour un salon (records du store). */

@@ -10116,12 +10116,21 @@ var require_discord = __commonJS({
       sendRaw(channelId, content) {
         const actions = this.MessageActions;
         if (!actions) throw new Error("Module d'envoi introuvable");
-        return actions.sendMessage(channelId, {
+        const message = {
           content,
           tts: false,
           invalidEmojis: [],
           validNonShortcutEmojis: []
-        });
+        };
+        return actions.sendMessage(channelId, message, void 0, { nonce: this._nonce() });
+      },
+      /** Nonce d'envoi (snowflake Discord : (ms - époque 2015-01-01) << 22). */
+      _nonce() {
+        try {
+          return String(BigInt(Date.now()) - 1420070400000n << 22n);
+        } catch (e2) {
+          return String(Date.now());
+        }
       },
       /** Messages actuellement en cache pour un salon (records du store). */
       storeMessages(channelId) {
