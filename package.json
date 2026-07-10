@@ -1,0 +1,36 @@
+{
+  "name": "discordpgp",
+  "version": "1.0.0",
+  "description": "Chiffrement PGP de bout en bout pour Discord Desktop (plugin BetterDiscord)",
+  "main": "dist/DiscordPGP.plugin.js",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enzoamr/discordpgp.git"
+  },
+  "keywords": [
+    "discord",
+    "betterdiscord",
+    "pgp",
+    "openpgp",
+    "encryption",
+    "e2ee"
+  ],
+  "author": "enzoamr",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/enzoamr/discordpgp/issues"
+  },
+  "homepage": "https://github.com/enzoamr/discordpgp#readme",
+  "dependencies": {
+    "openpgp": "^6.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}
