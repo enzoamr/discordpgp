@@ -117,6 +117,10 @@ const Discord = {
     );
   },
 
+  get UploadManager() {
+    return resolve('UploadManager', () => moduleByKeys('uploadFiles'));
+  },
+
   /** État de santé des accroches internes — affiché dans les réglages. */
   health() {
     return {
@@ -126,6 +130,7 @@ const Discord = {
       ChannelStore: Boolean(this.ChannelStore),
       UserStore: Boolean(this.UserStore),
       SelectedChannelStore: Boolean(this.SelectedChannelStore),
+      UploadManager: Boolean(this.UploadManager),
     };
   },
 

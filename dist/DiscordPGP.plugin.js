@@ -10105,6 +10105,9 @@ var require_discord = __commonJS({
           ])
         );
       },
+      get UploadManager() {
+        return resolve("UploadManager", () => moduleByKeys("uploadFiles"));
+      },
       /** État de santé des accroches internes — affiché dans les réglages. */
       health() {
         return {
@@ -10113,7 +10116,8 @@ var require_discord = __commonJS({
           MessageStore: Boolean(this.MessageStore),
           ChannelStore: Boolean(this.ChannelStore),
           UserStore: Boolean(this.UserStore),
-          SelectedChannelStore: Boolean(this.SelectedChannelStore)
+          SelectedChannelStore: Boolean(this.SelectedChannelStore),
+          UploadManager: Boolean(this.UploadManager)
         };
       },
       /** Id de l'utilisateur courant. */
@@ -10473,7 +10477,7 @@ var require_modals = __commonJS({
         });
       });
     }
-    function confirm({ title, body, confirmText = "Confirmer", danger = false }) {
+    function confirm2({ title, body, confirmText = "Confirmer", danger = false }) {
       return new Promise((resolve) => {
         BdApi.UI.showConfirmationModal(title, body, {
           confirmText,
@@ -10528,7 +10532,7 @@ var require_modals = __commonJS({
         return false;
       }
     }
-    module2.exports = { promptText: promptText2, confirm, showArmored, copyToClipboard, h: h2, inputStyle };
+    module2.exports = { promptText: promptText2, confirm: confirm2, showArmored, copyToClipboard, h: h2, inputStyle };
   }
 });
 
@@ -10553,7 +10557,7 @@ var require_commands = __commonJS({
     "use strict";
     var { COMMAND_PREFIX: COMMAND_PREFIX2 } = require_constants();
     var pgp2 = require_pgp();
-    var { confirm, h: h2 } = require_modals();
+    var { confirm: confirm2, h: h2 } = require_modals();
     var { UserError } = require_errors();
     function isCommand2(content) {
       if (typeof content !== "string") return false;
@@ -10643,7 +10647,7 @@ var require_commands = __commonJS({
         ),
         existing ? h2("div", { style: { marginTop: "8px" } }, `\u26A0\uFE0F D\xE9j\xE0 import\xE9e sous \xAB ${existing.label} \xBB \u2014 l'import mettra \xE0 jour l'association.`) : null
       );
-      const ok = await confirm({
+      const ok = await confirm2({
         title: "Importer cette cl\xE9 publique ?",
         body,
         confirmText: "Importer"
@@ -10705,7 +10709,7 @@ var require_commands = __commonJS({
         { style: { color: "var(--text-normal, #dcddde)", lineHeight: "1.7" } },
         lines.map((line, i2) => h2("div", { key: i2 }, line))
       );
-      return confirm({ title: "DiscordPGP \u2014 \xE9tat", body, confirmText: "OK" });
+      return confirm2({ title: "DiscordPGP \u2014 \xE9tat", body, confirmText: "OK" });
     }
     function cmdHelp(ctx) {
       const rows = [
@@ -10735,7 +10739,7 @@ var require_commands = __commonJS({
           "Ces commandes sont intercept\xE9es localement : elles ne sont jamais envoy\xE9es dans le salon. Gestion compl\xE8te des cl\xE9s : R\xE9glages \u2192 Plugins \u2192 DiscordPGP."
         )
       );
-      return confirm({ title: "DiscordPGP \u2014 commandes", body, confirmText: "OK" });
+      return confirm2({ title: "DiscordPGP \u2014 commandes", body, confirmText: "OK" });
     }
     module2.exports = { isCommand: isCommand2, runCommand: runCommand2 };
   }
@@ -10804,7 +10808,7 @@ var require_settings = __commonJS({
   "src/ui/settings.js"(exports2, module2) {
     "use strict";
     var pgp2 = require_pgp();
-    var { promptText: promptText2, confirm, showArmored, copyToClipboard, h: h2, inputStyle } = require_modals();
+    var { promptText: promptText2, confirm: confirm2, showArmored, copyToClipboard, h: h2, inputStyle } = require_modals();
     var React = () => BdApi.React;
     var styles = {
       panel: { color: "var(--text-normal, #dcddde)", fontSize: "14px", lineHeight: "1.5" },
@@ -10912,7 +10916,7 @@ var require_settings = __commonJS({
             h2(Btn, {
               label: "Sauvegarder la cl\xE9 priv\xE9e",
               onClick: async () => {
-                const ok = await confirm({
+                const ok = await confirm2({
                   title: "Exporter la cl\xE9 priv\xE9e ?",
                   body: "Ne partagez JAMAIS ce bloc. Conservez-le dans un gestionnaire de mots de passe ou sur un support hors-ligne.",
                   confirmText: "Afficher",
@@ -10935,14 +10939,14 @@ var require_settings = __commonJS({
               label: "Supprimer l'identit\xE9",
               danger: true,
               onClick: async () => {
-                const ok = await confirm({
+                const ok = await confirm2({
                   title: "Supprimer votre identit\xE9 PGP ?",
                   body: "Sans sauvegarde de la cl\xE9 priv\xE9e, TOUS les anciens messages chiffr\xE9s deviendront d\xE9finitivement illisibles.",
                   confirmText: "Supprimer",
                   danger: true
                 });
                 if (!ok) return;
-                const twice = await confirm({
+                const twice = await confirm2({
                   title: "Vraiment s\xFBr ?",
                   body: "Derni\xE8re chance : avez-vous export\xE9 une sauvegarde ?",
                   confirmText: "Oui, supprimer",
@@ -10972,7 +10976,7 @@ var require_settings = __commonJS({
           onClick: async () => {
             if (pass !== pass2) return ctx.toast("les phrases secr\xE8tes ne correspondent pas", "error");
             if (!pass) {
-              const ok = await confirm({
+              const ok = await confirm2({
                 title: "Sans phrase secr\xE8te ?",
                 body: "Votre cl\xE9 priv\xE9e sera stock\xE9e sans protection sur ce PC. Toute personne ayant acc\xE8s \xE0 votre session pourra lire vos messages.",
                 confirmText: "Continuer sans",
@@ -11056,7 +11060,7 @@ var require_settings = __commonJS({
               danger: true,
               small: true,
               onClick: async () => {
-                const ok = await confirm({
+                const ok = await confirm2({
                   title: `Supprimer ${contact.label} ?`,
                   body: "Vous ne pourrez plus chiffrer pour cette personne.",
                   confirmText: "Supprimer",
@@ -11265,7 +11269,7 @@ var require_settings = __commonJS({
               });
               if (!query) return;
               if (identity) {
-                const ok = await confirm({
+                const ok = await confirm2({
                   title: "Remplacer l'identit\xE9 actuelle ?",
                   body: "Sauvegardez d'abord votre cl\xE9 actuelle si n\xE9cessaire.",
                   confirmText: "Remplacer",
@@ -11377,7 +11381,7 @@ var { Discord } = require_discord();
 var { Receiver } = require_receive();
 var { isCommand, runCommand } = require_commands();
 var { encryptOutgoing } = require_send();
-var { promptText } = require_modals();
+var { promptText, confirm } = require_modals();
 var { buildSettingsPanel } = require_settings();
 var DISPATCH_EVENTS = [
   "MESSAGE_CREATE",
@@ -11432,6 +11436,15 @@ module.exports = class DiscordPGP {
       );
     } else {
       this.ctx.toast("module d'envoi introuvable \u2014 chiffrement \xE0 l'envoi indisponible", "error");
+    }
+    const uploadManager = Discord.UploadManager;
+    if (uploadManager && typeof uploadManager.uploadFiles === "function") {
+      BdApi.Patcher.instead(
+        PLUGIN_NAME,
+        uploadManager,
+        "uploadFiles",
+        (thisObj, args, original) => this._onUploadFiles(thisObj, args, original)
+      );
     }
     this._dispatchHandler = (event) => {
       try {
@@ -11512,6 +11525,27 @@ module.exports = class DiscordPGP {
       this.ctx.toast(e2.userFacing ? e2.message : `\xE9chec du chiffrement : ${e2.message}`, "error");
       if (!e2.userFacing) console.error(`[${PLUGIN_NAME}]`, e2);
     }
+  }
+  async _onUploadFiles(thisObj, args, original) {
+    try {
+      const first = args[0];
+      const channelId = first && typeof first === "object" && first.channelId || (typeof first === "string" ? first : null);
+      if (channelId && this.keyring.getChannel(channelId).enabled) {
+        const ok = await confirm({
+          title: "\u26A0\uFE0F Pi\xE8ce jointe NON chiffr\xE9e",
+          body: "Le chiffrement PGP est activ\xE9 dans ce salon, mais les fichiers et le texte qui les accompagne (l\xE9gende) partent EN CLAIR sur les serveurs de Discord \u2014 le plugin ne chiffre que les messages texte. Envoyer quand m\xEAme ?",
+          confirmText: "Envoyer non chiffr\xE9",
+          danger: true
+        });
+        if (!ok) {
+          this.ctx.toast("envoi de la pi\xE8ce jointe annul\xE9", "info");
+          return;
+        }
+      }
+    } catch (e2) {
+      console.error(`[${PLUGIN_NAME}]`, e2);
+    }
+    return original.apply(thisObj, args);
   }
   // ---- Déverrouillage ------------------------------------------------------
   async ensureUnlocked(reason) {

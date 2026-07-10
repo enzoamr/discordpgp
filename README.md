@@ -98,6 +98,11 @@ Installation de GnuPG : [gpg4win.org](https://gpg4win.org) (Windows),
 - **Votre clé privée est stockée localement** (chiffrée par votre phrase secrète si vous
   en avez une) dans les données de plugin BetterDiscord. Sans phrase secrète, toute
   personne ayant accès à votre session PC peut lire vos messages.
+- **Les pièces jointes ne sont PAS chiffrées** : les fichiers (et le texte de légende qui
+  les accompagne) passent par un autre circuit que les messages texte et partent en clair.
+  Dans un salon `.pgp on`, le plugin affiche un avertissement et demande confirmation avant
+  l'upload. Pour un fichier confidentiel : chiffrez-le d'abord (`gpg --encrypt`) et envoyez
+  le `.gpg`.
 - **Limite de taille** : un message chiffré fait ~600 caractères + ~1,4× le texte. Au-delà
   de la limite Discord (2000, ou 4000 avec Nitro — réglable dans les options), l'envoi est
   refusé avec un message d'erreur.

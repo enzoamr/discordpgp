@@ -14,7 +14,7 @@ const { Discord } = require('./discord');
 const { Receiver } = require('./receive');
 const { isCommand, runCommand } = require('./commands');
 const { encryptOutgoing } = require('./send');
-const { promptText } = require('./ui/modals');
+const { promptText, confirm } = require('./ui/modals');
 const { buildSettingsPanel } = require('./ui/settings');
 
 const DISPATCH_EVENTS = [
@@ -74,6 +74,16 @@ module.exports = class DiscordPGP {
       );
     } else {
       this.ctx.toast('module d\'envoi introuvable — chiffrement à l\'envoi indisponible', 'error');
+    }
+
+    // --- Garde-fou pièces jointes : les fichiers (et leur légende) ne
+    // passent PAS par sendMessage et partent donc NON chiffrés. Dans un
+    // salon .pgp on, on demande confirmation avant l'upload. ---
+    const uploadManager = Discord.UploadManager;
+    if (uploadManager && typeof uploadManager.uploadFiles === 'function') {
+      BdApi.Patcher.instead(PLUGIN_NAME, uploadManager, 'uploadFiles', (thisObj, args, original) =>
+        this._onUploadFiles(thisObj, args, original)
+      );
     }
 
     // --- Déchiffrement des messages entrants ---
@@ -181,6 +191,36 @@ module.exports = class DiscordPGP {
       this.ctx.toast(e.userFacing ? e.message : `échec du chiffrement : ${e.message}`, 'error');
       if (!e.userFacing) console.error(`[${PLUGIN_NAME}]`, e);
     }
+  }
+
+  async _onUploadFiles(thisObj, args, original) {
+    try {
+      const first = args[0];
+      const channelId =
+        (first && typeof first === 'object' && first.channelId) ||
+        (typeof first === 'string' ? first : null);
+      if (channelId && this.keyring.getChannel(channelId).enabled) {
+        const ok = await confirm({
+          title: '⚠️ Pièce jointe NON chiffrée',
+          body:
+            'Le chiffrement PGP est activé dans ce salon, mais les fichiers ' +
+            'et le texte qui les accompagne (légende) partent EN CLAIR sur ' +
+            'les serveurs de Discord — le plugin ne chiffre que les messages texte. ' +
+            'Envoyer quand même ?',
+          confirmText: 'Envoyer non chiffré',
+          danger: true,
+        });
+        if (!ok) {
+          this.ctx.toast('envoi de la pièce jointe annulé', 'info');
+          return;
+        }
+      }
+    } catch (e) {
+      // En cas de doute (structure d'arguments inattendue), ne pas bloquer
+      // l'utilisateur : on laisse passer l'upload.
+      console.error(`[${PLUGIN_NAME}]`, e);
+    }
+    return original.apply(thisObj, args);
   }
 
   // ---- Déverrouillage ------------------------------------------------------
