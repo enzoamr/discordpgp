@@ -14,6 +14,19 @@ function byKeys(...keys) {
   return factory(...keys);
 }
 
+/** Essaie plusieurs stratégies de recherche, dans l'ordre, jusqu'à un succès. */
+function firstOf(strategies) {
+  for (const strategy of strategies) {
+    try {
+      const mod = strategy();
+      if (mod) return mod;
+    } catch (e) {
+      /* stratégie suivante */
+    }
+  }
+  return null;
+}
+
 function resolve(name, factory) {
   if (moduleCache.has(name)) return moduleCache.get(name);
   let mod = null;
@@ -26,42 +39,81 @@ function resolve(name, factory) {
   return mod;
 }
 
+/** Recherche un store Flux par son nom (API BdApi.Webpack.getStore, BD ≥ 1.10). */
+function storeByName(name) {
+  return BdApi.Webpack.getStore ? BdApi.Webpack.getStore(name) : null;
+}
+
+/** Recherche par clés : d'abord parmi les exports directs, puis à l'intérieur
+ * des exports (Discord récent expose beaucoup de modules en propriété). */
+function moduleByKeys(...keys) {
+  return firstOf([
+    () => BdApi.Webpack.getModule(byKeys(...keys)),
+    () => BdApi.Webpack.getModule(byKeys(...keys), { searchExports: true }),
+  ]);
+}
+
 const Discord = {
   get Dispatcher() {
+    const looksLikeDispatcher = (m) =>
+      m &&
+      typeof m.dispatch === 'function' &&
+      typeof m.subscribe === 'function' &&
+      typeof m.unsubscribe === 'function';
     return resolve('Dispatcher', () =>
-      BdApi.Webpack.getModule(
-        (m) => m && typeof m.dispatch === 'function' && typeof m.subscribe === 'function'
-      )
+      firstOf([
+        // Export direct (anciennes versions de Discord).
+        () => BdApi.Webpack.getModule(looksLikeDispatcher),
+        // Propriété d'un export (Discord récent).
+        () => BdApi.Webpack.getModule(looksLikeDispatcher, { searchExports: true }),
+        // Filet de sécurité : chaque store Flux référence le dispatcher.
+        () => {
+          const store =
+            this.UserStore || this.ChannelStore || this.MessageStore || this.SelectedChannelStore;
+          const dispatcher = store && store._dispatcher;
+          return looksLikeDispatcher(dispatcher) ? dispatcher : null;
+        },
+      ])
     );
   },
 
   get MessageActions() {
-    return resolve('MessageActions', () =>
-      BdApi.Webpack.getModule(byKeys('sendMessage', 'editMessage'))
-    );
+    return resolve('MessageActions', () => moduleByKeys('sendMessage', 'editMessage'));
   },
 
   get MessageStore() {
     return resolve('MessageStore', () =>
-      BdApi.Webpack.getModule(byKeys('getMessage', 'getMessages'))
+      firstOf([
+        () => storeByName('MessageStore'),
+        () => moduleByKeys('getMessage', 'getMessages'),
+      ])
     );
   },
 
   get ChannelStore() {
     return resolve('ChannelStore', () =>
-      BdApi.Webpack.getModule(byKeys('getChannel', 'getDMFromUserId'))
+      firstOf([
+        () => storeByName('ChannelStore'),
+        () => moduleByKeys('getChannel', 'getDMFromUserId'),
+      ])
     );
   },
 
   get UserStore() {
     return resolve('UserStore', () =>
-      BdApi.Webpack.getModule(byKeys('getCurrentUser', 'getUser'))
+      firstOf([
+        () => storeByName('UserStore'),
+        () => moduleByKeys('getCurrentUser', 'getUser'),
+      ])
     );
   },
 
   get SelectedChannelStore() {
     return resolve('SelectedChannelStore', () =>
-      BdApi.Webpack.getModule(byKeys('getChannelId', 'getVoiceChannelId'))
+      firstOf([
+        () => storeByName('SelectedChannelStore'),
+        () => moduleByKeys('getChannelId', 'getVoiceChannelId'),
+      ])
     );
   },
 
